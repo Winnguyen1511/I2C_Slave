@@ -54,7 +54,9 @@ volatile uint16_t	direction_status = 0;
 volatile uint16_t 	speed_status = 0;
 volatile uint16_t	duty_cycle_1 = 0xFFFF/2;
 volatile uint16_t	duty_cycle_2 = 0xFFFF/2;
-uint8_t tempBuf[I2C_DATA_LENGTH];
+volatile uint8_t tempBuf[I2C_DATA_LENGTH];
+//volatile uint8_t logbuf[10000];
+//volatile uint16_t ind = 0;
 volatile uint8_t	buf[I2C_FRAME_LENGTH];
 //char buffer[5];
 volatile uint8_t aTxBuffer = 0;
@@ -361,28 +363,26 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 			if(  SPEED_UP_BIT & speed_status)
 			{
 				//duty_cycle_1 < MAX_SERVO - 0xFF && duty_cycle_2 < MAX_SERVO - 0xFF && 
-				if(duty_cycle_1 < MAX_SERVO -0xFF && duty_cycle_2 < MAX_SERVO- 0xFF)
+				if(duty_cycle_1 < MAX_SERVO -0x1FF && duty_cycle_2 < MAX_SERVO- 0x1FF)
 				{
 					duty_cycle_1 += 327;
 					duty_cycle_2 += 327;
 				}
 				else
 				{
-					duty_cycle_1 = MAX_SERVO;
-					duty_cycle_2 = MAX_SERVO;
+
 				}
 			}
 			if (SPEED_DOWN_BIT & speed_status)
 			{
 				//duty_cycle_1 > MIN_SERVO + 0xFF && duty_cycle_2 > MIN_SERVO + 0xFF && 
-				if(duty_cycle_1 > MIN_SERVO + 0xFF && duty_cycle_2 > MIN_SERVO + 0xFF )
+				if(duty_cycle_1 > MIN_SERVO + 0x1FF && duty_cycle_2 > MIN_SERVO + 0x1FF )
 				{
 					duty_cycle_1 -= 327;
 					duty_cycle_2 -= 327;
 				}
 				else{
-					duty_cycle_1 = MIN_SERVO;
-					duty_cycle_2 = MIN_SERVO;
+
 				}
 			}
 			time_count = 0;
@@ -486,10 +486,11 @@ void HAL_I2C_SlaveRxCpltCallback(I2C_HandleTypeDef *hi2c)
 {
 	//uint8_t buf[1];
 	aRxBuffer = buf[I2C_COMMAND_BIT];  
+
 	HandleCommand(aRxBuffer);
 	if(HAL_I2C_Slave_Receive_IT(&hi2c1, (uint8_t*) buf, I2C_FRAME_LENGTH) != HAL_OK)
 	{
-		Error_Handler();
+		//Error_Handler();
 	}
 }
 
@@ -568,19 +569,19 @@ void HandleCommand(uint8_t command)
 	if(command == MASTER_CHECK_SPEED)
 	{
 		uint8_t buffer[I2C_FRAME_LENGTH]= {0};
-		
-		if(sprintf((char*)tempBuf, "%d", (int)duty_cycle_1*100/MAX_SERVO) == -1)
+		buffer[I2C_DATA_LENGTH] = duty_cycle_1*100/MAX_SERVO;
+//		if(sprintf((char*)tempBuf, "%d", (int)duty_cycle_1*100/MAX_SERVO) == -1)
+//		{
+//			Error_Handler();
+//		}
+//		
+//		for(int i = 1; i <= 4; i++)
+//		{
+//			buffer[i] = tempBuf[i-1];
+//		}		
+		if(HAL_I2C_Slave_Transmit(&hi2c1,(uint8_t*) buffer, I2C_FRAME_LENGTH,100) != HAL_OK)
 		{
-			Error_Handler();
-		}
-		
-		for(int i = 1; i <= 4; i++)
-		{
-			buffer[i] = tempBuf[i-1];
-		}		
-		if(HAL_I2C_Slave_Transmit(&hi2c1,(uint8_t*) buffer, I2C_FRAME_LENGTH, 1000) != HAL_OK)
-		{
-			Error_Handler();
+			//Error_Handler();
 		}			
 	}
 }

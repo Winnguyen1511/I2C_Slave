@@ -102,8 +102,8 @@ void Error_Handler(void);
 #define I2C_ADDRESS		0x2F
 #define I2C_DUTYCYCLE	I2C_DUTYCYLE_2
 
-#define	I2C_FRAME_LENGTH						6
-#define	I2C_DATA_LENGTH							4
+#define	I2C_FRAME_LENGTH						3
+#define	I2C_DATA_LENGTH							1
 #define	I2C_COMMAND_BIT							0
 
 #define MOVE_UP_COMMAND_START				0x01
@@ -123,7 +123,7 @@ void Error_Handler(void);
 #define	SPEED_DOWN_START						0x0B
 #define	SPEED_DOWN_END							0x0C
 
-#define	MASTER_CHECK_SPEED					0x0D
+#define	MASTER_CHECK_SPEED					0x01E
 /* USER CODE END Private defines */
 
 #ifdef __cplusplus
