@@ -79,6 +79,8 @@ void stopServo1(void);
 void stopServo2(void);
 
 void HandleCommand(uint8_t command);
+
+uint8_t checksum_8bit(uint8_t*buffer);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -485,8 +487,10 @@ void stopServo2(void)
 void HAL_I2C_SlaveRxCpltCallback(I2C_HandleTypeDef *hi2c)
 {
 	//uint8_t buf[1];
-	aRxBuffer = buf[I2C_COMMAND_BIT];  
-
+	if(checksum_8bit((uint8_t*)buf) == I2C_CHECKSUM_TRUE)
+		aRxBuffer = buf[I2C_COMMAND_BIT];  
+	else
+		aRxBuffer = 0;
 	HandleCommand(aRxBuffer);
 	if(HAL_I2C_Slave_Receive_IT(&hi2c1, (uint8_t*) buf, I2C_FRAME_LENGTH) != HAL_OK)
 	{
@@ -570,6 +574,7 @@ void HandleCommand(uint8_t command)
 	{
 		uint8_t buffer[I2C_FRAME_LENGTH]= {0};
 		buffer[I2C_DATA_LENGTH] = duty_cycle_1*100/MAX_SERVO;
+		buffer[I2C_CHECKSUM_BIT] = buffer[I2C_DATA_LENGTH] % 256;
 //		if(sprintf((char*)tempBuf, "%d", (int)duty_cycle_1*100/MAX_SERVO) == -1)
 //		{
 //			Error_Handler();
@@ -584,6 +589,17 @@ void HandleCommand(uint8_t command)
 			//Error_Handler();
 		}			
 	}
+}
+
+uint8_t checksum_8bit(uint8_t*buffer)
+{
+	uint8_t checkbit = buffer[I2C_CHECKSUM_BIT];
+	uint8_t sum = 0;
+	sum = buffer[0] + buffer[1];
+	sum = sum % 256;
+	if(sum == checkbit)
+		return I2C_CHECKSUM_TRUE;
+	return I2C_CHECKSUM_FALSE;
 }
 /* USER CODE END 4 */
 
